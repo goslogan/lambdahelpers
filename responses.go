@@ -22,7 +22,7 @@ func NewResponse() events.APIGatewayV2HTTPResponse {
 // parameters are written to the log with Error level. The error return value is *always* nil to satisfy the requirements
 // of the lambda handler. The body is set to "Internal Server Error"
 // Any additional values in logValues are written to the log after the initial values
-func InternalErrorResponseWithLog(message string, err error, logger log.Logger, logValues ...interface{}) (events.APIGatewayV2HTTPResponse, error) {
+func InternalErrorResponse(message string, err error, logger log.Logger, logValues ...interface{}) (events.APIGatewayV2HTTPResponse, error) {
 	return ErrorResponse(message, "", err, http.StatusInternalServerError, logger, logValues...)
 }
 
@@ -49,8 +49,10 @@ func ResponseWithType(body, contentType string, status int) (events.APIGatewayV2
 // an empty string, the string value of the error will be used instead.
 // Any additional values in logValues are written to the log after the initial values
 func ErrorResponse(message, body string, err error, status int, logger log.Logger, logValues ...interface{}) (events.APIGatewayV2HTTPResponse, error) {
-	toLog := append([]interface{}{"error", err}, logValues...)
-	logger.Error(message, toLog...)
+	if logger != nil {
+		toLog := append([]interface{}{"error", err}, logValues...)
+		logger.Error(message, toLog...)
+	}
 	response := NewResponse()
 	response.StatusCode = status
 	if body == "" {
@@ -66,8 +68,10 @@ func ErrorResponse(message, body string, err error, status int, logger log.Logge
 // are written to the log at Warning level. The error return value is *always* nil to satisfy the requirements
 // of the lambda handler. Any additional values in logValues are written to the log after the initial values
 func NotFoundResponse(message, what string, logger log.Logger, logValues ...interface{}) (events.APIGatewayV2HTTPResponse, error) {
-	toLog := append([]interface{}{"what", what}, logValues...)
-	logger.Warn(message, toLog...)
+	if logger != nil {
+		toLog := append([]interface{}{"what", what}, logValues...)
+		logger.Warn(message, toLog...)
+	}
 	response := NewResponse()
 	response.StatusCode = http.StatusNotFound
 	response.Body = fmt.Sprintf("%s not found", what)
@@ -79,12 +83,21 @@ func NotFoundResponse(message, what string, logger log.Logger, logValues ...inte
 // are written to the log at Warning level. The error return value is *always* nil to satisfy the requirements
 // of the lambda handler. Any additional values in logValues are written to the log after the initial values
 func ForbiddenResponse(message, what string, logger log.Logger, logValues ...interface{}) (events.APIGatewayV2HTTPResponse, error) {
-	toLog := append([]interface{}{"what", what}, logValues...)
-	logger.Warn(message, toLog...)
+	if logger != nil {
+		toLog := append([]interface{}{"what", what}, logValues...)
+		logger.Warn(message, toLog...)
+	}
 	response := NewResponse()
 	response.StatusCode = http.StatusForbidden
 	response.Body = "Access Denied"
 	return response, nil
 }
 
-// ConflictResponse
+// CreatedResponse returns a basic "created" response. The error return value is *always* nil to satisfy the requirements
+// of the lambda handler.
+func CreatedResponse() (events.APIGatewayV2HTTPResponse, error) {
+	response := NewResponse()
+	response.StatusCode = http.StatusCreated
+	response.Body = "Created"
+	return response, nil
+}
